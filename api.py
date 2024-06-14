@@ -11,7 +11,6 @@ load_dotenv()  # take environment variables from .env file
 
 
 class VersaTrak(object):
-
     def __init__(
         self,
         base_url=os.getenv(
@@ -41,11 +40,11 @@ class VersaTrak(object):
             method_whitelist=["HEAD", "GET", "OPTIONS"],
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("https://", adapter)
-        self.session.mount("http://", adapter)
+        self.session.mount(prefix="https://", adapter=adapter)
+        self.session.mount(prefix="http://", adapter=adapter)
 
         logging.debug(
-            f"VersaTrak object created with base url: {self.session.base_url}"
+            msg=f"VersaTrak object created with base url: {self.session.base_url}"
         )
 
         if instance:
@@ -53,26 +52,26 @@ class VersaTrak(object):
         else:
             self.instance = self.get_first_instance_id()
             logging.debug(
-                f"No instance specified, using first instance id: {self.instance}"
+                msg=f"No instance specified, using first instance id: {self.instance}"
             )
 
         self.is_logged_on = self.isloggedon()
 
         if not self.is_logged_on:
             if self.instance and self.username and self.password:
-                logging.debug(f"Logging in with {self.username}")
+                logging.debug(msg=f"Logging in with {self.username}")
                 self.login()
             else:
-                logging.debug("No credentials specified")
+                logging.debug(msg="No credentials specified")
 
     def get_instances(self):
         try:
-            r = self.session.get("usersession/action/instanceList")
+            r = self.session.get(url="usersession/action/instanceList")
             r.raise_for_status()
             instances = r.json()["instances"]
             return instances
         except HTTPError as e:
-            logging.error(f"HTTPError: {e}")
+            logging.error(msg=f"HTTPError: {e}")
             raise
 
     def get_first_instance_id(self):
@@ -87,52 +86,52 @@ class VersaTrak(object):
             "instance": self.instance,
         }
 
-        r = self.session.post("usersession/action/logon", data=logon_data)
+        r = self.session.post(url="usersession/action/logon", data=logon_data)
         self.token = r.json()["jwt"]
-        logging.debug("Received token: " + self.token)
+        logging.debug(msg="Received token: " + self.token)
         self.refresh_token = r.json()["refreshToken"]
-        logging.debug("Received refresh token: " + self.refresh_token)
+        logging.debug(msg="Received refresh token: " + self.refresh_token)
         self.session.headers.update({"Authorization": "Bearer " + self.token})
         self.is_logged_on = self.isloggedon()
-        logging.debug(f"Logged on: {self.is_logged_on}")
+        logging.debug(msg=f"Logged on: {self.is_logged_on}")
         return self.is_logged_on
 
     def isloggedon(self):
-        r = self.session.get("usersession/action/isloggedon")
+        r = self.session.get(url="usersession/action/isloggedon")
         self.is_logged_on = r.json()["isLoggedOn"]
         return self.is_logged_on
 
     def currentstatus(self):
         try:
-            r = self.session.get("currentstatus")
+            r = self.session.get(url="currentstatus")
             r.raise_for_status()
             return r.text
         except HTTPError as e:
-            logging.error(f"HTTPError: {e}")
+            logging.error(msg=f"HTTPError: {e}")
             raise
 
     def department(self):
-        r = self.session.get("department")
+        r = self.session.get(url="department")
         return r.text
 
     def location(self):
-        r = self.session.get("location")
+        r = self.session.get(url="location")
         return r.text
 
     def uom(self):
-        r = self.session.get("uom")
+        r = self.session.get(url="uom")
         return r.text
 
     def policy(self):
-        r = self.session.get("policy")
+        r = self.session.get(url="policy")
         return r.text
 
     def monitoredobjecttype(self):
-        r = self.session.get("monitoredObjectType")
+        r = self.session.get(url="monitoredObjectType")
         return r.text
 
     def monitorpointtype(self):
-        r = self.session.get("monitorPointType")
+        r = self.session.get(url="monitorPointType")
         return r.text
 
     def gethistorydata(
@@ -148,15 +147,15 @@ class VersaTrak(object):
                 "adjustToMostRecent": True,
             }
             r = self.session.post(
-                f"monitoredObject/action/gethistorydata/{object_id}", data=params
+                url=f"monitoredObject/action/gethistorydata/{object_id}", data=params
             )
             r.raise_for_status()
             return r.text
         except HTTPError as exc:
-            logging.error(f"HTTPError: {exc}")
+            logging.error(msg=f"HTTPError: {exc}")
             raise
         except Exception as exc:
-            logging.error(exc)
+            logging.error(msg=exc)
 
 
 if __name__ == "__main__":
