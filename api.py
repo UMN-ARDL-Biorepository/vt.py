@@ -146,6 +146,8 @@ class VersaTrak(object):
                 "jsTimestamps": True,
                 "adjustToMostRecent": True,
             }
+            if not self.is_logged_on:
+                self.login()
             r = self.session.post(
                 url=f"monitoredObject/action/gethistorydata/{object_id}", data=params
             )
