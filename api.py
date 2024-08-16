@@ -79,6 +79,16 @@ class VersaTrak(object):
         first_instance_id = instances[0]["id"]
         return first_instance_id
 
+    def update_token(self, token=None, refresh_token=None):
+        logging.debug(msg="Received token: " + self.token)
+        self.token = token
+        logging.debug(msg="Received refresh token: " + self.refresh_token)
+        self.refresh_token = refresh_token
+        self.session.headers.update({"Authorization": "Bearer " + self.token})
+        self.is_logged_on = self.isloggedon()
+        logging.debug(msg=f"Logged on: {self.is_logged_on}")
+        return self.is_logged_on
+
     def login(self):
         logon_data = {
             "username": self.username,
@@ -87,19 +97,23 @@ class VersaTrak(object):
         }
 
         r = self.session.post(url="usersession/action/logon", data=logon_data)
-        self.token = r.json()["jwt"]
-        logging.debug(msg="Received token: " + self.token)
-        self.refresh_token = r.json()["refreshToken"]
-        logging.debug(msg="Received refresh token: " + self.refresh_token)
-        self.session.headers.update({"Authorization": "Bearer " + self.token})
-        self.is_logged_on = self.isloggedon()
-        logging.debug(msg=f"Logged on: {self.is_logged_on}")
-        return self.is_logged_on
+        return self.update_token(
+            token=r.json()["jwt"], refresh_token=r.json()["refreshToken"]
+        )
 
     def isloggedon(self):
         r = self.session.get(url="usersession/action/isloggedon")
         self.is_logged_on = r.json()["isLoggedOn"]
         return self.is_logged_on
+
+    def refresh_auth_token(self):
+        r = self.session.post(
+            url="usersession/action/refreshAuthToken",
+            data={"authToken": self.token, "refreshToken": self.refresh_token},
+        )
+        return self.update_token(
+            token=r.json()["jwt"], refresh_token=r.json()["refreshToken"]
+        )
 
     def logoff(self):
         r = self.session.post(url="usersession/action/logoff")
@@ -118,6 +132,18 @@ class VersaTrak(object):
         r = self.session.get(url="user/action/watchlist")
         return r.text
 
+    def get_users_list(self):
+        r = self.session.get(url="user/action/getEditUsersList")
+        return r.text
+
+    def get_user(self, user_id):
+        r = self.session.get(url=f"user/{user_id}")
+        return r.text
+
+    def get_users(self):
+        r = self.session.get(url="user")
+        return r.text
+
     def currentstatus(self):
         try:
             r = self.session.get(url="currentstatus")
@@ -126,6 +152,10 @@ class VersaTrak(object):
         except HTTPError as e:
             logging.error(msg=f"HTTPError: {e}")
             raise
+
+    def getallmonitoredobjects(self):
+        r = self.session.get(url="monitoredobject/action/getall")
+        return r.text
 
     def department(self):
         r = self.session.get(url="department")
