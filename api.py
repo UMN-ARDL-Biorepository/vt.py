@@ -80,9 +80,9 @@ class VersaTrak(object):
         return first_instance_id
 
     def update_token(self, token=None, refresh_token=None):
-        logging.debug(msg="Received token: " + self.token)
+        logging.debug(msg=f"Received token: {token}")
         self.token = token
-        logging.debug(msg="Received refresh token: " + self.refresh_token)
+        logging.debug(msg=f"Received refresh token: {refresh_token}")
         self.refresh_token = refresh_token
         self.session.headers.update({"Authorization": "Bearer " + self.token})
         self.is_logged_on = self.isloggedon()
@@ -111,8 +111,9 @@ class VersaTrak(object):
             url="usersession/action/refreshAuthToken",
             data={"authToken": self.token, "refreshToken": self.refresh_token},
         )
+        logging.debug(msg=r.json())
         return self.update_token(
-            token=r.json()["jwt"], refresh_token=r.json()["refreshToken"]
+            token=r.json()["authToken"], refresh_token=r.json()["refreshToken"]
         )
 
     def logoff(self):
