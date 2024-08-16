@@ -101,6 +101,23 @@ class VersaTrak(object):
         self.is_logged_on = r.json()["isLoggedOn"]
         return self.is_logged_on
 
+    def logoff(self):
+        r = self.session.post(url="usersession/action/logoff")
+        self.is_logged_on = False
+        return r.text
+
+    def userrole(self):
+        r = self.session.get(url="userrole")
+        return r.text
+
+    def functions(self):
+        r = self.session.get(url="userrole/action/functions")
+        return r.text
+
+    def watchlist(self):
+        r = self.session.get(url="user/action/watchlist")
+        return r.text
+
     def currentstatus(self):
         try:
             r = self.session.get(url="currentstatus")
@@ -132,6 +149,14 @@ class VersaTrak(object):
 
     def monitorpointtype(self):
         r = self.session.get(url="monitorPointType")
+        return r.text
+
+    def probetypes(self):
+        r = self.session.get(url="sensortype/probetypes")
+        return r.text
+
+    def sysinfo(self):
+        r = self.session.get(url="system/action/sysinfo")
         return r.text
 
     def gethistorydata(
