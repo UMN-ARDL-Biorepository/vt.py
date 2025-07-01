@@ -26,7 +26,7 @@ class VersaTrak(object):
         self.refresh_token = refresh_token
 
         self.session = BaseUrlSession(base_url=base_url)
-        assert_status_hook = (
+        assert_status_hook = (  # noqa: E731
             lambda response, *args, **kwargs: response.raise_for_status()
         )
         self.session.hooks["response"] = [assert_status_hook]
