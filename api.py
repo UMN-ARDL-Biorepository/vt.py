@@ -1,13 +1,10 @@
 import logging
 import os
 
-from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from requests.exceptions import HTTPError
 from requests.packages.urllib3.util.retry import Retry
 from requests_toolbelt.sessions import BaseUrlSession
-
-load_dotenv()  # take environment variables from .env file
 
 
 class VersaTrak(object):
