@@ -5,9 +5,17 @@ requires-python = ">=3.10"
 dependencies = [
     "requests>=2.29.0",
     "requests-toolbelt>=1.0.0",
+    "urllib3<2",
 ]
 
 [dependency-groups]
 dev = [
     "pre-commit>=4.2.0",
+    "pytest>=8.4.2",
+    "python-dotenv>=1.1.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
 ]
