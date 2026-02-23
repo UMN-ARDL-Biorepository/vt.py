@@ -25,7 +25,8 @@ class VersaTrak(object):
         )
         instance = instance or os.getenv("INSTANCE_ID", "")
         username = username or os.getenv("USERNAME", "")
-        password = password or os.getenv("PASSWORD", "")
+        if password is None:
+            password = os.getenv("PASSWORD", "")
         self.username = username
         self.password = password
         self.token = token
