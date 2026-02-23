@@ -12,11 +12,8 @@ from uplink import (
     AiohttpClient,
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
+logger.addHandler(logging.NullHandler())
 def raise_for_status(response):
     response.raise_for_status()
     return response
@@ -119,7 +116,9 @@ class VersaTrak(Consumer):
 
     async def aget_first_instance_id(self):
         instances = await self.aget_instances()
-        return instances[0]["id"] if instances else None
+        if not instances:
+            raise RuntimeError("No instances available")
+        return instances[0]["id"]
 
     async def alogin(self):
         logon_data = {
@@ -187,7 +186,7 @@ class VersaTrak(Consumer):
         res = await self.awatchlist_raw()
         return await res.text()
 
-    @post("user/action/getEditUsersList")
+    @get("user/action/getEditUsersList")
     async def aget_users_list_raw(self):
         pass
 
@@ -196,11 +195,11 @@ class VersaTrak(Consumer):
         return await res.text()
 
     @get("user/{user_id}")
-    async def aget_user_raw(self, user_id):
+    async def aget_user_raw(self, user_id: Path("user_id")):
         pass
 
     async def aget_user(self, user_id):
-        res = await self.aget_user_raw(user_id)
+        res = await self.aget_user_raw(user_id=user_id)
         return await res.text()
 
     @get("user")

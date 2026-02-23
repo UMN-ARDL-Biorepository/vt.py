@@ -13,6 +13,11 @@ def client():
     if not api_url:
         pytest.skip("API_URL not set in .env")
 
+    username = os.getenv("USERNAME")
+    password = os.getenv("PASSWORD")
+    instance = os.getenv("INSTANCE")
+    if not username or not password or not instance:
+        pytest.skip("USERNAME, PASSWORD, and INSTANCE must be set in .env for authenticated tests")
     vt = VersaTrak(base_url=api_url)
     # The client logs in during initialization if credentials are provided
     yield vt
@@ -170,6 +175,8 @@ def test_refresh_auth_token(client):
 
 def test_login_logout_manual():
     api_url = os.getenv("API_URL")
+    if not api_url:
+        pytest.skip("API_URL not set in .env")
     vt = VersaTrak(base_url=api_url)
     if not vt.is_logged_on:
         vt.login()
