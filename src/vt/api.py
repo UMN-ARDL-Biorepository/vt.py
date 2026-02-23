@@ -12,11 +12,8 @@ from uplink import (
     AiohttpClient,
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
+logger.addHandler(logging.NullHandler())
 def raise_for_status(response):
     response.raise_for_status()
     return response
