@@ -10,16 +10,22 @@ from requests_toolbelt.sessions import BaseUrlSession
 class VersaTrak(object):
     def __init__(
         self,
-        base_url=os.getenv(
-            key="API_URL", default="http://versatrak.example.com/vtwebapi2/api/"
-        ),
-        instance=os.getenv(key="INSTANCE_ID", default=""),
-        username=os.getenv(key="USERNAME", default=""),
-        password=os.getenv(key="PASSWORD", default=""),
+        base_url=None,
+        instance=None,
+        username=None,
+        password=None,
         token=None,
         refresh_token=None,
         is_logged_on=False,
     ):
+        base_url = (
+            base_url
+            or os.getenv("API_URL")
+            or "http://versatrak.example.com/vtwebapi2/api/"
+        )
+        instance = instance or os.getenv("INSTANCE_ID", "")
+        username = username or os.getenv("USERNAME", "")
+        password = password or os.getenv("PASSWORD", "")
         self.username = username
         self.password = password
         self.token = token
@@ -116,6 +122,10 @@ class VersaTrak(object):
     def logoff(self):
         r = self.session.post(url="usersession/action/logoff")
         self.is_logged_on = False
+        self.token = ""
+        self.refresh_token = ""
+        if "Authorization" in self.session.headers:
+            del self.session.headers["Authorization"]
         return r.text
 
     def userrole(self):
