@@ -175,6 +175,8 @@ def test_refresh_auth_token(client):
 
 def test_login_logout_manual():
     api_url = os.getenv("API_URL")
+    if not api_url:
+        pytest.skip("API_URL not set in .env")
     vt = VersaTrak(base_url=api_url)
     if not vt.is_logged_on:
         vt.login()
