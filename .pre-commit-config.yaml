@@ -10,6 +10,8 @@ repos:
     rev: 0.10.4
     hooks:
       - id: uv-sync
+      # NOTE: uv-export is intentionally disabled; requirements.txt is maintained manually
+      #       and is not relied upon for builds or deployment, so it is not auto-generated.
       # - id: uv-export
       #   args: [-o,requirements.txt,-q]
   - repo: https://github.com/astral-sh/ruff-pre-commit
