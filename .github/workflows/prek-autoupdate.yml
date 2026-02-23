@@ -1,0 +1,39 @@
+name: Prek Autoupdate
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Every Monday at 00:00 UTC
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  autoupdate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv and prek
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          uv tool install prek
+
+      - name: Run prek autoupdate
+        run: prek autoupdate
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update pre-commit hooks via prek"
+          title: "chore: update pre-commit hooks"
+          body: "Automated update of pre-commit hooks using `prek autoupdate`."
+          branch: "prek-autoupdate"
+          delete-branch: true
+          labels: |
+            dependencies
+            automated

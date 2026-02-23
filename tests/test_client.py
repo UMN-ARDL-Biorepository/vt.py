@@ -1,5 +1,5 @@
 import os
-from api import VersaTrak
+from vt.api import VersaTrak
 from dotenv import load_dotenv
 
 load_dotenv()

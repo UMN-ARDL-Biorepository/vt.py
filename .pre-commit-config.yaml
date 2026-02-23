@@ -10,8 +10,8 @@ repos:
     rev: 0.10.4
     hooks:
       - id: uv-sync
-      # - id: uv-export
-      #   args: [-o,requirements.txt,-q]
+      - id: uv-export
+        args: [-o,requirements.txt,-q]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.2
     hooks:
