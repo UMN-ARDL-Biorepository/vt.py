@@ -186,7 +186,7 @@ class VersaTrak(Consumer):
         res = await self.awatchlist_raw()
         return await res.text()
 
-    @post("user/action/getEditUsersList")
+    @get("user/action/getEditUsersList")
     async def aget_users_list_raw(self):
         pass
 
