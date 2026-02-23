@@ -4,7 +4,7 @@ A modern Python client for the [VersaTrak](https://versatrak.com/) v6 API, desig
 
 ## Features
 
-- **Robust Authentication**: Handles JWT tokens and automatic refresh.
+- **Robust Authentication**: Handles JWT tokens with a convenient manual refresh method.
 - **Modern Python**: Built for Python 3.10 through 3.13.
 - **Reliability**: Built-in retry strategies for transient network errors.
 - **Comprehensive API Support**:
