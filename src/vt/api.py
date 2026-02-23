@@ -1,90 +1,101 @@
 import logging
 import os
+from uplink import Consumer, get, post, Path, Body, returns, response_handler
 
-from requests.adapters import HTTPAdapter
-from requests.exceptions import HTTPError
-from requests.packages.urllib3.util.retry import Retry
-from requests_toolbelt.sessions import BaseUrlSession
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-class VersaTrak(object):
+def raise_for_status(response):
+    response.raise_for_status()
+    return response
+
+
+@response_handler(raise_for_status)
+class VersaTrak(Consumer):
     def __init__(
         self,
-        base_url=os.getenv(
-            key="API_URL", default="http://versatrak.example.com/vtwebapi2/api/"
-        ),
-        instance=os.getenv(key="INSTANCE_ID", default=""),
-        username=os.getenv(key="USERNAME", default=""),
-        password=os.getenv(key="PASSWORD", default=""),
+        base_url=None,
+        instance=None,
+        username=None,
+        password=None,
         token=None,
         refresh_token=None,
-        is_logged_on=False,
     ):
-        self.username = username
-        self.password = password
+        base_url = (
+            base_url
+            or os.getenv("API_URL")
+            or "http://versatrak.example.com/vtwebapi2/api/"
+        )
+        super(VersaTrak, self).__init__(base_url=base_url)
+
+        self.instance = instance or os.getenv("INSTANCE_ID", "")
+        self.username = username or os.getenv("USERNAME", "")
+        self.password = password or os.getenv("PASSWORD", "")
         self.token = token
         self.refresh_token = refresh_token
+        self.is_logged_on = False
 
-        self.session = BaseUrlSession(base_url=base_url)
-        assert_status_hook = (  # noqa: E731
-            lambda response, *args, **kwargs: response.raise_for_status()
-        )
-        self.session.hooks["response"] = [assert_status_hook]
+        if self.token:
+            self.session.headers.update({"Authorization": f"Bearer {self.token}"})
+            self.is_logged_on = True
 
-        retry_strategy = Retry(
-            total=3,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "OPTIONS"],
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount(prefix="https://", adapter=adapter)
-        self.session.mount(prefix="http://", adapter=adapter)
+        # Automated login if credentials provided
+        if not self.is_logged_on and self.username and self.password:
+            if not self.instance:
+                try:
+                    self.instance = self.get_first_instance_id()
+                except Exception as e:
+                    logger.debug(f"Failed to fetch instance list during init: {e}")
 
-        logging.debug(
-            msg=f"VersaTrak object created with base url: {self.session.base_url}"
-        )
+            if self.instance:
+                try:
+                    self.login()
+                except Exception as e:
+                    logger.debug(f"Failed to auto-login during init: {e}")
 
-        if instance:
-            self.instance = instance
-        else:
-            self.instance = self.get_first_instance_id()
-            logging.debug(
-                msg=f"No instance specified, using first instance id: {self.instance}"
-            )
+    # --- Internal methods returning JSON or Response ---
 
-        self.is_logged_on = self.isloggedon()
+    @returns.json
+    @get("usersession/action/instanceList")
+    def _get_instance_list(self):
+        """Internal"""
 
-        if not self.is_logged_on:
-            if self.instance and self.username and self.password:
-                logging.debug(msg=f"Logging in with {self.username}")
-                self.login()
-            else:
-                logging.debug(msg="No credentials specified")
+    @returns.json
+    @post("usersession/action/logon")
+    def _login(self, **data: Body):
+        """Internal"""
+
+    @returns.json
+    @get("usersession/action/isloggedon")
+    def _isloggedon(self):
+        """Internal"""
+
+    @returns.json
+    @post("usersession/action/refreshAuthToken")
+    def _refresh_token(self, **data: Body):
+        """Internal"""
+
+    @post("usersession/action/logoff")
+    def _logoff_raw(self):
+        """Internal"""
+
+    @post("monitoredObject/action/gethistorydata/{object_id}")
+    def _get_history(self, object_id: Path, **data: Body):
+        """Internal"""
+
+    # --- Public API methods ---
 
     def get_instances(self):
-        try:
-            r = self.session.get(url="usersession/action/instanceList")
-            r.raise_for_status()
-            instances = r.json()["instances"]
-            return instances
-        except HTTPError as e:
-            logging.error(msg=f"HTTPError: {e}")
-            raise
+        res = self._get_instance_list()
+        return res.get("instances", [])
 
     def get_first_instance_id(self):
         instances = self.get_instances()
-        first_instance_id = instances[0]["id"]
-        return first_instance_id
-
-    def update_token(self, token=None, refresh_token=None):
-        logging.debug(msg=f"Received token: {token}")
-        self.token = token
-        logging.debug(msg=f"Received refresh token: {refresh_token}")
-        self.refresh_token = refresh_token
-        self.session.headers.update({"Authorization": "Bearer " + self.token})
-        self.is_logged_on = self.isloggedon()
-        logging.debug(msg=f"Logged on: {self.is_logged_on}")
-        return self.is_logged_on
+        if instances:
+            return instances[0]["id"]
+        return None
 
     def login(self):
         logon_data = {
@@ -92,128 +103,169 @@ class VersaTrak(object):
             "password": self.password,
             "instance": self.instance,
         }
-
-        r = self.session.post(url="usersession/action/logon", data=logon_data)
-        return self.update_token(
-            token=r.json()["jwt"], refresh_token=r.json()["refreshToken"]
-        )
+        res = self._login(**logon_data)
+        self.token = res.get("jwt")
+        self.refresh_token = res.get("refreshToken")
+        if self.token:
+            self.session.headers.update({"Authorization": f"Bearer {self.token}"})
+            self.is_logged_on = True
+        return self.is_logged_on
 
     def isloggedon(self):
-        r = self.session.get(url="usersession/action/isloggedon")
-        self.is_logged_on = r.json()["isLoggedOn"]
+        res = self._isloggedon()
+        self.is_logged_on = res.get("isLoggedOn", False)
         return self.is_logged_on
 
     def refresh_auth_token(self):
-        r = self.session.post(
-            url="usersession/action/refreshAuthToken",
-            data={"authToken": self.token, "refreshToken": self.refresh_token},
-        )
-        logging.debug(msg=r.json())
-        return self.update_token(
-            token=r.json()["authToken"], refresh_token=r.json()["refreshToken"]
-        )
+        data = {"authToken": self.token, "refreshToken": self.refresh_token}
+        res = self._refresh_token(**data)
+        self.token = res.get("authToken")
+        self.refresh_token = res.get("refreshToken")
+        if self.token:
+            self.session.headers.update({"Authorization": f"Bearer {self.token}"})
+            self.is_logged_on = True
+        return self.is_logged_on
 
     def logoff(self):
-        r = self.session.post(url="usersession/action/logoff")
-        self.is_logged_on = False
-        return r.text
+        try:
+            res = self._logoff_raw()
+            return res.text
+        finally:
+            self.is_logged_on = False
+            self.token = ""
+            self.refresh_token = ""
+            if "Authorization" in self.session.headers:
+                del self.session.headers["Authorization"]
+
+    @get("userrole")
+    def userrole_raw(self):
+        pass
 
     def userrole(self):
-        r = self.session.get(url="userrole")
-        return r.text
+        return self.userrole_raw().text
+
+    @get("userrole/action/functions")
+    def functions_raw(self):
+        pass
 
     def functions(self):
-        r = self.session.get(url="userrole/action/functions")
-        return r.text
+        return self.functions_raw().text
+
+    @get("user/action/watchlist")
+    def watchlist_raw(self):
+        pass
 
     def watchlist(self):
-        r = self.session.get(url="user/action/watchlist")
-        return r.text
+        return self.watchlist_raw().text
+
+    @post("user/action/getEditUsersList")
+    def get_users_list_raw(self):
+        pass
 
     def get_users_list(self):
-        r = self.session.get(url="user/action/getEditUsersList")
-        return r.text
+        return self.get_users_list_raw().text
+
+    @get("user/{user_id}")
+    def get_user_raw(self, user_id):
+        pass
 
     def get_user(self, user_id):
-        r = self.session.get(url=f"user/{user_id}")
-        return r.text
+        return self.get_user_raw(user_id).text
+
+    @get("user")
+    def get_users_raw(self):
+        pass
 
     def get_users(self):
-        r = self.session.get(url="user")
-        return r.text
+        return self.get_users_raw().text
+
+    @get("currentstatus")
+    def currentstatus_raw(self):
+        pass
 
     def currentstatus(self):
-        try:
-            r = self.session.get(url="currentstatus")
-            r.raise_for_status()
-            return r.text
-        except HTTPError as e:
-            logging.error(msg=f"HTTPError: {e}")
-            raise
+        return self.currentstatus_raw().text
+
+    @get("monitoredobject/action/getall")
+    def getallmonitoredobjects_raw(self):
+        pass
 
     def getallmonitoredobjects(self):
-        r = self.session.get(url="monitoredobject/action/getall")
-        return r.text
+        return self.getallmonitoredobjects_raw().text
+
+    @get("department")
+    def department_raw(self):
+        pass
 
     def department(self):
-        r = self.session.get(url="department")
-        return r.text
+        return self.department_raw().text
+
+    @get("location")
+    def location_raw(self):
+        pass
 
     def location(self):
-        r = self.session.get(url="location")
-        return r.text
+        return self.location_raw().text
+
+    @get("uom")
+    def uom_raw(self):
+        pass
 
     def uom(self):
-        r = self.session.get(url="uom")
-        return r.text
+        return self.uom_raw().text
+
+    @get("policy")
+    def policy_raw(self):
+        pass
 
     def policy(self):
-        r = self.session.get(url="policy")
-        return r.text
+        return self.policy_raw().text
+
+    @get("monitoredObjectType")
+    def monitoredobjecttype_raw(self):
+        pass
 
     def monitoredobjecttype(self):
-        r = self.session.get(url="monitoredObjectType")
-        return r.text
+        return self.monitoredobjecttype_raw().text
+
+    @get("monitorPointType")
+    def monitorpointtype_raw(self):
+        pass
 
     def monitorpointtype(self):
-        r = self.session.get(url="monitorPointType")
-        return r.text
+        return self.monitorpointtype_raw().text
+
+    @get("sensortype/probetypes")
+    def probetypes_raw(self):
+        pass
 
     def probetypes(self):
-        r = self.session.get(url="sensortype/probetypes")
-        return r.text
+        return self.probetypes_raw().text
+
+    @get("system/action/sysinfo")
+    def sysinfo_raw(self):
+        pass
 
     def sysinfo(self):
-        r = self.session.get(url="system/action/sysinfo")
-        return r.text
+        return self.sysinfo_raw().text
 
     def gethistorydata(
         self, object_id, start_date=0, end_date=0, period="1d", include_events=False
     ):
-        try:
-            params = {
-                "tsStartDate": start_date,
-                "tsEndDate": end_date,
-                "period": period,
-                "includeEvents": include_events,
-                "jsTimestamps": True,
-                "adjustToMostRecent": True,
-            }
-            if not self.is_logged_on:
-                self.login()
-            r = self.session.post(
-                url=f"monitoredObject/action/gethistorydata/{object_id}", data=params
-            )
-            r.raise_for_status()
-            return r.text
-        except HTTPError as exc:
-            logging.error(msg=f"HTTPError: {exc}")
-            raise
-        except Exception as exc:
-            logging.error(msg=exc)
+        params = {
+            "tsStartDate": start_date,
+            "tsEndDate": end_date,
+            "period": period,
+            "includeEvents": include_events,
+            "jsTimestamps": True,
+            "adjustToMostRecent": True,
+        }
+        if not self.is_logged_on:
+            self.login()
+        res = self._get_history(object_id=object_id, **params)
+        return res.text
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger(name=__name__)
     vt = VersaTrak()
