@@ -119,7 +119,9 @@ class VersaTrak(Consumer):
 
     async def aget_first_instance_id(self):
         instances = await self.aget_instances()
-        return instances[0]["id"] if instances else None
+        if not instances:
+            raise RuntimeError("No instances available")
+        return instances[0]["id"]
 
     async def alogin(self):
         logon_data = {
