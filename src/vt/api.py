@@ -36,7 +36,7 @@ class VersaTrak(Consumer):
         base_url = (
             base_url
             or os.getenv("API_URL")
-            or "http://versatrak.example.com/vtwebapi2/api/"
+            or "http://versatrak.ahc.umn.edu/vtwebapi2/api/"
         )
         super(VersaTrak, self).__init__(base_url=base_url, client=AiohttpClient())
 
@@ -90,7 +90,7 @@ class VersaTrak(Consumer):
 
     @returns.json
     @post("usersession/action/logon")
-    async def _alogon_raw(self, **data: Body):
+    async def _alogon_raw(self, data: Body):
         pass
 
     @returns.json
@@ -100,7 +100,7 @@ class VersaTrak(Consumer):
 
     @returns.json
     @post("usersession/action/refreshAuthToken")
-    async def _arefresh_token_raw(self, **data: Body):
+    async def _arefresh_token_raw(self, data: Body):
         pass
 
     @post("usersession/action/logoff")
@@ -108,7 +108,7 @@ class VersaTrak(Consumer):
         pass
 
     @post("monitoredObject/action/gethistorydata/{object_id}")
-    async def _aget_history_raw(self, object_id: Path, **data: Body):
+    async def _aget_history_raw(self, object_id: Path, data: Body):
         pass
 
     # --- Public Async API methods ---
@@ -127,7 +127,7 @@ class VersaTrak(Consumer):
             "password": self.password,
             "instance": self.instance,
         }
-        res = await self._alogon_raw(**logon_data)
+        res = await self._alogon_raw(logon_data)
         self.token = res.get("jwt")
         self.refresh_token = res.get("refreshToken")
         if self.token:
@@ -142,7 +142,7 @@ class VersaTrak(Consumer):
 
     async def arefresh_auth_token(self):
         data = {"authToken": self.token, "refreshToken": self.refresh_token}
-        res = await self._arefresh_token_raw(**data)
+        res = await self._arefresh_token_raw(data)
         self.token = res.get("authToken")
         self.refresh_token = res.get("refreshToken")
         if self.token:
@@ -304,7 +304,7 @@ class VersaTrak(Consumer):
         }
         if not self.is_logged_on:
             await self.alogin()
-        res = await self._aget_history_raw(object_id=object_id, **params)
+        res = await self._aget_history_raw(object_id=object_id, data=params)
         return await res.text()
 
     # --- Public Sync API methods (Wrappers) ---
