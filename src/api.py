@@ -25,7 +25,8 @@ class VersaTrak(object):
         )
         instance = instance or os.getenv("INSTANCE_ID", "")
         username = username or os.getenv("USERNAME", "")
-        password = password or os.getenv("PASSWORD", "")
+        if password is None:
+            password = os.getenv("PASSWORD", "")
         self.username = username
         self.password = password
         self.token = token
@@ -120,13 +121,15 @@ class VersaTrak(object):
         )
 
     def logoff(self):
-        r = self.session.post(url="usersession/action/logoff")
-        self.is_logged_on = False
-        self.token = ""
-        self.refresh_token = ""
-        if "Authorization" in self.session.headers:
-            del self.session.headers["Authorization"]
-        return r.text
+        try:
+            r = self.session.post(url="usersession/action/logoff")
+            return r.text
+        finally:
+            self.is_logged_on = False
+            self.token = ""
+            self.refresh_token = ""
+            if "Authorization" in self.session.headers:
+                del self.session.headers["Authorization"]
 
     def userrole(self):
         r = self.session.get(url="userrole")
