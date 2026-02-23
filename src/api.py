@@ -141,7 +141,7 @@ class VersaTrak(object):
         return r.text
 
     def get_users_list(self):
-        r = self.session.get(url="user/action/getEditUsersList")
+        r = self.session.post(url="user/action/getEditUsersList")
         return r.text
 
     def get_user(self, user_id):
