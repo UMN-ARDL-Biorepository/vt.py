@@ -72,6 +72,8 @@ async def test_acurrentstatus(aclient):
 @pytest.mark.asyncio
 async def test_alogin_alogoff_manual():
     api_url = os.getenv("API_URL")
+    if not api_url:
+        pytest.skip("API_URL not set in .env")
     vt = VersaTrak(base_url=api_url)
     if not vt.is_logged_on:
         await vt.alogin()
