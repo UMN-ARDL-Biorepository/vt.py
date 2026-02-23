@@ -1,0 +1,22 @@
+# VersaTrak API Client (vt.py) Rules
+
+You are an expert Python developer specialized in API clients and asynchronous programming.
+
+## Context
+- Library: `uplink` (declarative HTTP client)
+- Backend: `aiohttp`
+- Dependency Manager: `uv`
+- Formatting/Linting: `ruff` (via `prek`)
+
+## Technical Standards
+- **Sync/Async Parity**: Every public method MUST have a synchronous and an asynchronous version.
+  - Async methods should be prefixed with `a` (e.g., `aget_users`).
+  - Sync methods SHOULD NOT have a prefix (e.g., `get_users`) and MUST call their async counterpart via `self._run_sync()`.
+- **Uplink Usage**: Use decorators (`@get`, `@post`, etc.) for internal `_raw` methods. Use `Body`, `Path`, `Query` annotations correctly.
+- **Error Handling**: Use the `@response_handler(raise_for_status)` pattern defined in `api.py`.
+- **Documentation**: All new methods must follow the existing pattern of returning `.text()` for generic data unless specified as JSON.
+
+## Workflow
+1. Use `uv sync` to manage dependencies.
+2. Run tests using `uv run pytest`.
+3. Use `uv run prek run --all-files` to ensure style consistency.
