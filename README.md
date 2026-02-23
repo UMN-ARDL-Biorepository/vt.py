@@ -59,7 +59,9 @@ vt.logoff()
 
 ## Configuration
 
-The client can be configured via environment variables, constructor arguments, or a `.env` file.
+The client can be configured via environment variables or constructor arguments.
+
+> **Note:** `VersaTrak` reads credentials from environment variables using `os.getenv()`. It does **not** load a `.env` file automatically. You must either export the variables in your shell or load them yourself before instantiating the client (e.g., using [`python-dotenv`](https://pypi.org/project/python-dotenv/)).
 
 ### Environment Configuration
 
@@ -76,6 +78,22 @@ For local development, it is recommended to use a `.env` file. A template is pro
    PASSWORD=your_password
    # INSTANCE_ID is optional; the client will use the first available if omitted
    INSTANCE_ID=your_instance_id
+   ```
+3. Load the `.env` file in your code before instantiating `VersaTrak`:
+   ```python
+   from dotenv import load_dotenv
+   from vt.api import VersaTrak
+
+   load_dotenv()  # loads variables from .env into os.environ
+
+   vt = VersaTrak()
+   ```
+
+   Alternatively, export the variables in your shell:
+   ```bash
+   export API_URL=https://your-instance.versatrak.com/vtwebapi2/api/
+   export USERNAME=your_username
+   export PASSWORD=your_password
    ```
 
 ### Variables reference
