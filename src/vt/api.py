@@ -196,11 +196,11 @@ class VersaTrak(Consumer):
         return await res.text()
 
     @get("user/{user_id}")
-    async def aget_user_raw(self, user_id):
+    async def aget_user_raw(self, user_id: Path("user_id")):
         pass
 
     async def aget_user(self, user_id):
-        res = await self.aget_user_raw(user_id)
+        res = await self.aget_user_raw(user_id=user_id)
         return await res.text()
 
     @get("user")
