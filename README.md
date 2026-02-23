@@ -34,8 +34,7 @@ uv sync
 ### Basic Usage
 
 ```python
-from api import VersaTrak
-import os
+from vt.api import VersaTrak
 
 # Initialize the client
 # It automatically pulls credentials from environment variables if available
