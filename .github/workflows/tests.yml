@@ -29,3 +29,7 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+        env:
+          VT_API_URL: ${{ secrets.VT_API_URL }}
+          VT_USERNAME: ${{ secrets.VT_USERNAME }}
+          VT_PASSWORD: ${{ secrets.VT_PASSWORD }}

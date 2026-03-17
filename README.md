@@ -98,6 +98,19 @@ We use `ruff` via `prek`.
 uv run prek run --all-files
 ```
 
+## GitHub Actions
+
+Automated tests are executed on every push and pull request via GitHub Actions.
+
+### Setting up Secrets
+To allow the GitHub Actions workflow to run authenticated tests, you must add the following [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions) to your repository:
+
+- `VT_API_URL`: The base URL for the VersaTrak API.
+- `VT_USERNAME`: The service account username.
+- `VT_PASSWORD`: The service account password.
+
+The workflow will automatically use these secrets to populate the environment variables required by the test suite.
+
 ## License
 
 MIT License. See `LICENSE` for details.
