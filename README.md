@@ -67,10 +67,10 @@ The client supports configuration through environment variables or a `.env` file
 
 | Variable | Description |
 | :--- | :--- |
-| `API_URL` | The base URL for the VersaTrak API |
-| `USERNAME` | Your VersaTrak username |
-| `PASSWORD` | Your VersaTrak password |
-| `INSTANCE_ID` | Optional: Specific VersaTrak instance ID |
+| `VT_API_URL` | The base URL for the VersaTrak API |
+| `VT_USERNAME` | Your VersaTrak username |
+| `VT_PASSWORD` | Your VersaTrak password |
+| `VT_INSTANCE_ID` | Optional: Specific VersaTrak instance ID |
 
 ### Local Development
 Copy `example.env` to `.env` and fill in your details:

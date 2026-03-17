@@ -32,14 +32,14 @@ class VersaTrak(Consumer):
     ):
         base_url = (
             base_url
-            or os.getenv("API_URL")
+            or os.getenv("VT_API_URL")
             or "http://versatrak.example.com/vtwebapi2/api/"
         )
         super(VersaTrak, self).__init__(base_url=base_url, client=AiohttpClient())
 
-        self.instance = instance or os.getenv("INSTANCE_ID", "")
-        self.username = username or os.getenv("USERNAME", "")
-        self.password = password or os.getenv("PASSWORD", "")
+        self.instance = instance or os.getenv("VT_INSTANCE_ID", "")
+        self.username = username or os.getenv("VT_USERNAME", "")
+        self.password = password or os.getenv("VT_PASSWORD", "")
         self.token = token
         self.refresh_token = refresh_token
         self.is_logged_on = False
@@ -87,7 +87,7 @@ class VersaTrak(Consumer):
 
     @returns.json
     @post("usersession/action/logon")
-    async def _alogon_raw(self, **data: Body):
+    async def _alogon_raw(self, data: Body):
         pass
 
     @returns.json
@@ -126,7 +126,7 @@ class VersaTrak(Consumer):
             "password": self.password,
             "instance": self.instance,
         }
-        res = await self._alogon_raw(**logon_data)
+        res = await self._alogon_raw(data=logon_data)
         self.token = res.get("jwt")
         self.refresh_token = res.get("refreshToken")
         if self.token:
