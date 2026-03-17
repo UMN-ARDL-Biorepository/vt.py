@@ -105,7 +105,7 @@ class VersaTrak(Consumer):
         pass
 
     @post("monitoredObject/action/gethistorydata/{object_id}")
-    async def _aget_history_raw(self, object_id: Path, **data: Body):
+    async def _aget_history_raw(self, object_id: Path, data: Body):
         pass
 
     # --- Public Async API methods ---
@@ -303,7 +303,7 @@ class VersaTrak(Consumer):
         }
         if not self.is_logged_on:
             await self.alogin()
-        res = await self._aget_history_raw(object_id=object_id, **params)
+        res = await self._aget_history_raw(object_id=object_id, data=params)
         return await res.text()
 
     # --- Public Sync API methods (Wrappers) ---

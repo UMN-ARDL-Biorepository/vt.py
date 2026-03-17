@@ -8,6 +8,8 @@ requires-python = ">=3.10"
 dependencies = [
     "aiohttp>=3.13.3",
     "nest-asyncio>=1.6.0",
+    "pandas>=2.3.3",
+    "pyarrow>=23.0.1",
     "uplink==0.10.0",
 ]
 
