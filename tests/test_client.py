@@ -17,7 +17,9 @@ def client():
     password = os.getenv("PASSWORD")
     instance = os.getenv("INSTANCE")
     if not username or not password or not instance:
-        pytest.skip("USERNAME, PASSWORD, and INSTANCE must be set in .env for authenticated tests")
+        pytest.skip(
+            "USERNAME, PASSWORD, and INSTANCE must be set in .env for authenticated tests"
+        )
     vt = VersaTrak(base_url=api_url)
     # The client logs in during initialization if credentials are provided
     yield vt
