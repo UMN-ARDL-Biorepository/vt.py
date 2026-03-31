@@ -20,7 +20,9 @@ async def aclient():
     username = os.getenv("USERNAME")
     password = os.getenv("PASSWORD")
     if not username or not password:
-        pytest.skip("USERNAME or PASSWORD not set in .env; authenticated tests require credentials")
+        pytest.skip(
+            "USERNAME or PASSWORD not set in .env; authenticated tests require credentials"
+        )
 
     # Explicitly ensure the client is logged in if auto-login did not occur
     if not vt.is_logged_on:

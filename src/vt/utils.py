@@ -2,11 +2,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class UomConverter:
     """
     Helper class to convert raw VersaTrak sensor readings to human-readable units.
     """
-    
+
     def __init__(self, uom_data):
         """
         Initialize with UOM metadata.
@@ -20,16 +21,18 @@ class UomConverter:
         Returns the converted float value.
         """
         if uom_id not in self.uom_map:
-            logger.warning(f"UOM ID {uom_id} not found in metadata. Returning raw value.")
+            logger.warning(
+                f"UOM ID {uom_id} not found in metadata. Returning raw value."
+            )
             return value
-            
+
         uom = self.uom_map[uom_id]
-        
+
         s1 = uom.get("dispS1", 1.0)
         o1 = uom.get("dispO1", 0.0)
         s2 = uom.get("dispS2", 1.0)
         o2 = uom.get("dispO2", 0.0)
-        
+
         # Formula: (v * s1 + o1) * s2 + o2
         converted = (value * s1 + o1) * s2 + o2
         return converted
@@ -40,13 +43,13 @@ class UomConverter:
         """
         if uom_id not in self.uom_map:
             return f"{value}"
-            
+
         uom = self.uom_map[uom_id]
         converted = self.convert(value, uom_id)
-        
+
         decimals = uom.get("nDec", 1)
         units = uom.get("dispUom", "")
-        
+
         return f"{converted:.{decimals}f} {units}".strip()
 
     def convert_series(self, series, uom_id):
@@ -54,7 +57,9 @@ class UomConverter:
         Convert a pandas Series of raw values to the units specified by uom_id.
         """
         if uom_id not in self.uom_map:
-            logger.warning(f"UOM ID {uom_id} not found in metadata. Returning raw series.")
+            logger.warning(
+                f"UOM ID {uom_id} not found in metadata. Returning raw series."
+            )
             return series
 
         uom = self.uom_map[uom_id]
