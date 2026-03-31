@@ -28,12 +28,20 @@ def main():
         objects_data = vt.getallmonitoredobjects()
         objects = json.loads(objects_data)
 
-        # Pick the first object found to demonstrate
-        if not objects:
+        # Pick a temperature sensor if possible, otherwise fall back to the first object
+        moid = None
+        for obj_id, obj_data in objects.items():
+            if "Temp" in obj_data.get("name", ""):
+                moid = obj_id
+                break
+
+        if not moid and objects:
+            moid = list(objects.keys())[0]
+
+        if not moid:
             print("No monitored objects found.")
             return
 
-        moid = list(objects.keys())[0]
         obj = objects[moid]
         print(f"Selected Object: {obj['name']} (ID: {moid})")
 
@@ -61,14 +69,24 @@ def main():
                 mp_name = mp_info.get("mpt", {}).get("name", "Unknown")
 
                 if raw_val is not None:
-                    # Convert the raw value to human-readable format
-                    human_val = converter.format(raw_val, uom_id)
-                    float_val = converter.convert(raw_val, uom_id)
+                    # 1. Convert by UOM ID (standard)
+                    human_val_id = converter.format(raw_val, uom_id)
+
+                    # 2. Convert by UOM Name (new!)
+                    # Get the name from metadata for demonstration
+                    uom_meta = converter.uom_map.get(uom_id, {})
+                    uom_name = uom_meta.get("name", "Unknown")
+                    human_val_name = converter.format(raw_val, uom_name)
+
+                    # 3. Convert by Display Unit (e.g. °C, %)
+                    disp_unit = uom_meta.get("dispUom", "")
+                    human_val_unit = converter.format(raw_val, disp_unit)
 
                     print(f"Measuring Point: {mp_name}")
                     print(f"  Raw Value: {raw_val}")
-                    print(f"  Human Value: {human_val}")
-                    print(f"  Float Value: {float_val:.4f}")
+                    print(f"  By UOM ID: {human_val_id}")
+                    print(f"  By Name:   {human_val_name}")
+                    print(f"  By Unit:   {human_val_unit}")
         else:
             print(f"No current status data found for {obj['name']}")
 

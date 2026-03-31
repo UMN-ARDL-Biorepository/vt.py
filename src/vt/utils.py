@@ -3,6 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+
 class UomConverter:
     """
     Helper class to convert raw VersaTrak sensor readings to human-readable units.

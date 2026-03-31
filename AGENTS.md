@@ -13,8 +13,8 @@ This document provides instructions and context for AI coding agents (Antigravit
   - **Async methods**: Prefixed with `a` (e.g., `aget_users`).
   - **Sync methods**: No prefix (e.g., `get_users`).
   - **Sync Wrapper**: Sync methods MUST call their async counterpart specifically via `self._run_sync()`. This allows the client to be used in synchronous environments while leveraging the `aiohttp` backend.
-- **Uplink Usage**: 
-  - Use decorators (`@get`, `@post`, etc.) for internal `_raw` methods. 
+- **Uplink Usage**:
+  - Use decorators (`@get`, `@post`, etc.) for internal `_raw` methods.
   - Use `Body`, `Path`, `Query` annotations correctly.
 - **Error Handling**: Use the `@response_handler(raise_for_status)` pattern defined in `api.py`.
 - **Response Handling**: Follow the existing pattern of returning `.text()` for general data unless specific JSON parsing is required.
@@ -28,7 +28,7 @@ This document provides instructions and context for AI coding agents (Antigravit
   - Always check `self.is_logged_on` before requests that require auth.
   - Auth tokens are managed in `self.token` and `self.refresh_token`.
   - The `Authorization` header is updated automatically in the `login` and `refresh` methods.
-- **Testing**: 
+- **Testing**:
   - Use `pytest`.
   - Async tests should use `@pytest.mark.asyncio`.
   - Tests require a valid `.env` file with real credentials as they target a live or dev instance.

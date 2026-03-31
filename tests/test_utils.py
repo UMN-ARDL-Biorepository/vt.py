@@ -2,6 +2,7 @@ import pytest
 import pandas as pd
 from vt.utils import UomConverter
 
+
 @pytest.fixture
 def uom_data():
     return {
@@ -13,7 +14,7 @@ def uom_data():
             "dispO1": 0.0,
             "dispS2": 1.0,
             "dispO2": 0.0,
-            "nDec": 1
+            "nDec": 1,
         },
         "celsius_id": {
             "id": "celsius_id",
@@ -23,17 +24,20 @@ def uom_data():
             "dispO1": -32.0,
             "dispS2": 0.5555555555555556,
             "dispO2": 0.0,
-            "nDec": 1
-        }
+            "nDec": 1,
+        },
     }
+
 
 @pytest.fixture
 def converter(uom_data):
     return UomConverter(uom_data)
 
+
 def test_convert_by_id(converter):
     raw = 205103.13
     assert pytest.approx(converter.convert(raw, "o2_id"), 0.0001) == 20.510313
+
 
 def test_convert_by_name(converter):
     raw = 205103.13
@@ -42,15 +46,18 @@ def test_convert_by_name(converter):
     # Case insensitive
     assert pytest.approx(converter.convert(raw, "% saturation"), 0.0001) == 20.510313
 
+
 def test_convert_by_display_unit(converter):
     raw = 205103.13
     # Look up by "dispUom"
     assert pytest.approx(converter.convert(raw, "%"), 0.0001) == 20.510313
 
+
 def test_convert_celsius_by_name(converter):
     # 32F -> 0C
     assert pytest.approx(converter.convert(32.0, "Celsius")) == 0.0
     assert converter.format(32.0, "Celsius") == "0.0 °C"
+
 
 def test_convert_series_by_name(converter):
     series = pd.Series([32.0, 212.0])
