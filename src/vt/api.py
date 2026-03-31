@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import os
+import json
+from .utils import UomConverter
 from uplink import (
     Consumer,
     get,
@@ -306,6 +308,16 @@ class VersaTrak(Consumer):
         res = await self._aget_history_raw(object_id=object_id, data=params)
         return await res.text()
 
+    async def aget_uoms(self):
+        """Fetch and parse Units of Measure into a dictionary."""
+        uom_json = await self.auom()
+        return json.loads(uom_json)
+
+    async def aget_uom_converter(self):
+        """Fetch UOMs and return a UomConverter instance."""
+        uom_data = await self.aget_uoms()
+        return UomConverter(uom_data)
+
     # --- Public Sync API methods (Wrappers) ---
 
     def get_instances(self):
@@ -382,6 +394,14 @@ class VersaTrak(Consumer):
                 object_id, start_date, end_date, period, include_events
             )
         )
+
+    def get_uoms(self):
+        """Fetch and parse Units of Measure into a dictionary."""
+        return self._run_sync(self.aget_uoms())
+
+    def get_uom_converter(self):
+        """Fetch UOMs and return a UomConverter instance."""
+        return self._run_sync(self.aget_uom_converter())
 
 
 if __name__ == "__main__":

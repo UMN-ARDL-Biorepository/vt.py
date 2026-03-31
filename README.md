@@ -8,6 +8,7 @@ A modern, declarative Python client for the [VersaTrak](https://versatrak.com/) 
 - **Declarative Design**: Clean and extensible implementation using `uplink`.
 - **Modern Async Backend**: Powered by `aiohttp` for high-performance requests.
 - **Robust Authentication**: Automatic session management, JWT handling, and token refresh.
+- **Unit Conversion**: Easily convert raw sensor readings to professional, human-readable units (e.g., % Saturation, ppm, Fahrenheit, Kelvin, Celsius).
 - **Developer Friendly**: Managed with `uv`, includes comprehensive `pytest` suites, and supports Python 3.10 through 3.13.
 
 ## Installation
@@ -59,6 +60,29 @@ async def main():
     await vt.alogoff()
 
 asyncio.run(main())
+```
+
+### Unit Conversion
+Raw values from the API often require scaling and formatting. You can use the built-in `UomConverter`:
+
+```python
+from vt.api import VersaTrak
+
+vt = VersaTrak()
+converter = vt.get_uom_converter()
+
+# Convert a single value
+# O2 raw reading 205103 -> 20.5 %
+raw_val = 205103.13
+uom_id = "3c4010d0-034f-48e5-bab6-5dcdb721ff93"
+
+print(f"Human: {converter.format(raw_val, uom_id)}")
+print(f"Float: {converter.convert(raw_val, uom_id)}")
+
+# Use with Pandas
+import pandas as pd
+df = pd.read_parquet('sensor_history.parquet')
+df['converted_val'] = converter.convert_series(df['value'], uom_id)
 ```
 
 ## Configuration
