@@ -14,15 +14,32 @@ class UomConverter:
         uom_data can be a dictionary mapping UOM IDs to their metadata.
         """
         self.uom_map = uom_data
+        self.name_map = {}
+        for uom_id, metadata in uom_data.items():
+            name = metadata.get("name")
+            display_name = metadata.get("dispUom")
+            if name:
+                self.name_map[name.lower()] = uom_id
+            if display_name:
+                self.name_map[display_name.lower()] = uom_id
 
-    def convert(self, value, uom_id):
+    def _resolve_uom_id(self, uom_reference):
         """
-        Convert a raw value to the units specified by uom_id.
+        Resolve a UOM reference (ID or name/display unit) to a UOM ID.
+        """
+        if uom_reference in self.uom_map:
+            return uom_reference
+        return self.name_map.get(str(uom_reference).lower())
+
+    def convert(self, value, uom_reference):
+        """
+        Convert a raw value to the units specified by UOM ID or name.
         Returns the converted float value.
         """
-        if uom_id not in self.uom_map:
+        uom_id = self._resolve_uom_id(uom_reference)
+        if not uom_id:
             logger.warning(
-                f"UOM ID {uom_id} not found in metadata. Returning raw value."
+                f"UOM '{uom_reference}' not found in metadata. Returning raw value."
             )
             return value
 
@@ -37,28 +54,29 @@ class UomConverter:
         converted = (value * s1 + o1) * s2 + o2
         return converted
 
-    def format(self, value, uom_id):
+    def format(self, value, uom_reference):
         """
         Convert and format a raw value as a string with units and proper decimal places.
         """
-        if uom_id not in self.uom_map:
+        uom_id = self._resolve_uom_id(uom_reference)
+        if not uom_id:
             return f"{value}"
 
         uom = self.uom_map[uom_id]
         converted = self.convert(value, uom_id)
-
         decimals = uom.get("nDec", 1)
         units = uom.get("dispUom", "")
 
         return f"{converted:.{decimals}f} {units}".strip()
 
-    def convert_series(self, series, uom_id):
+    def convert_series(self, series, uom_reference):
         """
-        Convert a pandas Series of raw values to the units specified by uom_id.
+        Convert a pandas Series of raw values to the units specified by UOM ID or name.
         """
-        if uom_id not in self.uom_map:
+        uom_id = self._resolve_uom_id(uom_reference)
+        if not uom_id:
             logger.warning(
-                f"UOM ID {uom_id} not found in metadata. Returning raw series."
+                f"UOM '{uom_reference}' not found in metadata. Returning raw series."
             )
             return series
 
