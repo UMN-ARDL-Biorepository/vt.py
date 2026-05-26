@@ -8,21 +8,111 @@ load_dotenv()
 
 @pytest.fixture(scope="module")
 def client():
-    # Ensure variables are available
+    # Run live only when explicitly requested
+    run_live = os.getenv("VT_RUN_LIVE_TESTS")
     api_url = os.getenv("API_URL")
-    if not api_url:
-        pytest.skip("API_URL not set in .env")
+    if run_live and api_url:
+        username = os.getenv("USERNAME")
+        password = os.getenv("PASSWORD")
+        instance = os.getenv("INSTANCE")
+        if not username or not password or not instance:
+            pytest.skip(
+                "USERNAME, PASSWORD, and INSTANCE must be set in .env for authenticated live tests"
+            )
+        vt = VersaTrak(base_url=api_url)
+        yield vt
+        if vt.is_logged_on:
+            vt.logoff()
+        return
 
-    username = os.getenv("USERNAME")
-    password = os.getenv("PASSWORD")
-    instance = os.getenv("INSTANCE")
-    if not username or not password or not instance:
-        pytest.skip(
-            "USERNAME, PASSWORD, and INSTANCE must be set in .env for authenticated tests"
-        )
-    vt = VersaTrak(base_url=api_url)
-    # The client logs in during initialization if credentials are provided
+    # Deterministic fake client for offline/unit testing
+    vt = VersaTrak(base_url="http://test.local", username="", password="")
+
+    # Async fakes used by sync wrappers; defined as coroutines without parameters
+    async def fake_aget_instances():
+        return [{"id": "inst1"}]
+
+    async def fake_aget_first_instance_id():
+        return "inst1"
+
+    async def fake_alogin():
+        vt.token = "fake-token"
+        vt.refresh_token = "fake-refresh"
+        vt.is_logged_on = True
+        vt.session.headers.update({"Authorization": f"Bearer {vt.token}"})
+        return True
+
+    async def fake_aisloggedon():
+        vt.is_logged_on = True
+        return True
+
+    async def fake_alogoff():
+        vt.is_logged_on = False
+        vt.token = ""
+        vt.refresh_token = ""
+        if "Authorization" in vt.session.headers:
+            del vt.session.headers["Authorization"]
+        return ""
+
+    async def fake_auserrole():
+        class _R:
+            async def text(self):
+                return "admin"
+
+        return _R()
+
+    async def fake_afunctions():
+        class _R:
+            async def text(self):
+                return "funcs"
+
+        return _R()
+
+    async def fake_acurrentstatus():
+        class _R:
+            async def text(self):
+                return "OK"
+
+        return _R()
+
+    # Inject fakes (async methods)
+    vt.aget_instances = fake_aget_instances
+    vt.aget_first_instance_id = fake_aget_first_instance_id
+    vt.alogin = fake_alogin
+    vt.aisloggedon = fake_aisloggedon
+    vt.alogoff = fake_alogoff
+    vt.auserrole_raw = fake_auserrole
+    vt.afunctions_raw = fake_afunctions
+    vt.acurrentstatus_raw = fake_acurrentstatus
+
+    # Other raw endpoints used across tests - return simple text responses
+    async def _text_resp(val):
+        class _R:
+            def __init__(self, v):
+                self._v = v
+
+            async def text(self):
+                return self._v
+
+        return _R(val)
+
+    vt.awatchlist_raw = lambda: _text_resp("[]")
+    vt.aget_users_list_raw = lambda: _text_resp("[]")
+    vt.aget_user_raw = lambda user_id: _text_resp("{}")
+    vt.aget_users_raw = lambda: _text_resp("[]")
+    vt.agetallmonitoredobjects_raw = lambda: _text_resp("[]")
+    vt.adepartment_raw = lambda: _text_resp("[]")
+    vt.alocation_raw = lambda: _text_resp("[]")
+    vt.auom_raw = lambda: _text_resp("{}")
+    vt.apolicy_raw = lambda: _text_resp("[]")
+    vt.amonitoredobjecttype_raw = lambda: _text_resp("[]")
+    vt.amonitorpointtype_raw = lambda: _text_resp("[]")
+    vt.aprobetypes_raw = lambda: _text_resp("[]")
+    vt.asysinfo_raw = lambda: _text_resp("{}")
+    vt._aget_history_raw = lambda object_id, data: _text_resp("[]")
+
     yield vt
+
     if vt.is_logged_on:
         vt.logoff()
 
@@ -179,6 +269,8 @@ def test_login_logout_manual():
     api_url = os.getenv("API_URL")
     if not api_url:
         pytest.skip("API_URL not set in .env")
+    if not os.getenv("VT_RUN_LIVE_TESTS"):
+        pytest.skip("VT_RUN_LIVE_TESTS not set; skipping live auth test")
     vt = VersaTrak(base_url=api_url)
     if not vt.is_logged_on:
         vt.login()

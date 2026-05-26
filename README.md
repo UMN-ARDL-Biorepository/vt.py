@@ -138,3 +138,23 @@ The workflow will automatically use these secrets to populate the environment va
 ## License
 
 MIT License. See `LICENSE` for details.
+
+## Python 3.14 compatibility
+
+This project is compatible with Python 3.14, but a small runtime shim is applied
+to maintain compatibility with third-party libraries that still call
+`asyncio.iscoroutinefunction`, which was deprecated in Python 3.14 in favor of
+`inspect.iscoroutinefunction`.
+
+The shim (in `src/vt/__init__.py`) forwards `asyncio.iscoroutinefunction` to
+`inspect.iscoroutinefunction` when necessary. This is a conservative, import-time
+fix to avoid noisy deprecation warnings while upstream libraries are updated.
+
+Why the shim exists:
+- Many widely-used libraries may not yet have migrated to `inspect.iscoroutinefunction`.
+- Patching those libraries directly in-site is fragile and not maintainable.
+- The shim is small, safe, reversible, and avoids hiding other important warnings.
+
+If you prefer not to use the shim, set `VT_RUN_LIVE_TESTS=1` and run tests on
+Python versions where the upstream libraries have been updated, or contribute a
+PR to the affected upstream projects to replace `asyncio.iscoroutinefunction`.

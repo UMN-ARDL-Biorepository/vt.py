@@ -1,5 +1,5 @@
 import pytest
-import pandas as pd
+import polars as pl
 from vt.utils import UomConverter
 
 
@@ -77,7 +77,7 @@ def test_convert_kelvin(converter):
 
 
 def test_convert_series(converter):
-    series = pd.Series([32.0, 212.0, 77.0])
+    series = pl.Series([32.0, 212.0, 77.0])
     converted = converter.convert_series(series, "celsius")
 
     assert pytest.approx(converted[0]) == 0.0
@@ -91,5 +91,6 @@ def test_unknown_uom(converter):
     assert converter.convert(raw, "unknown") == raw
     assert converter.format(raw, "unknown") == "123.45"
 
-    series = pd.Series([1.0, 2.0])
-    pd.testing.assert_series_equal(converter.convert_series(series, "unknown"), series)
+    series = pl.Series([1.0, 2.0])
+    converted = converter.convert_series(series, "unknown")
+    assert converted.to_list() == series.to_list()
